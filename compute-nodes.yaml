@@ -1,0 +1,87 @@
+- import_playbook: common.yaml
+
+- hosts: all
+  gather_facts: no
+
+  vars:
+    worker_list: []
+    port_name_list: []
+    nic_list: []
+
+  tasks:
+  # Create the SDN/primary port for each worker node
+  - name: 'Create the Compute ports'
+    os_port:
+      name: "{{ item.1 }}-{{ item.0 }}"
+      network: "{{ os_network }}"
+      security_groups:
+      - "{{ os_sg_worker }}"
+      allowed_address_pairs:
+      - ip_address: "{{ os_ingressVIP }}"
+    with_indexed_items: "{{ [os_port_worker] * os_compute_nodes_number }}"
+    register: ports
+
+  # Tag each SDN/primary port with cluster name
+  - name: 'Set Compute ports tag'
+    command:
+      cmd: "openstack port set --tag {{ cluster_id_tag }} {{ item.1 }}-{{ item.0 }}"
+    with_indexed_items: "{{ [os_port_worker] * os_compute_nodes_number }}"  
+
+  - name: 'List the Compute Trunks'
+    command:
+      cmd: "openstack network trunk list"
+    when: os_networking_type == "Kuryr"
+    register: compute_trunks
+ 
+  - name: 'Create the Compute trunks'
+    command:
+      cmd: "openstack network trunk create --parent-port {{ item.1.id }} {{ os_compute_trunk_name }}-{{ item.0 }}"
+    with_indexed_items: "{{ ports.results }}"
+    when:
+    - os_networking_type == "Kuryr"
+    - "os_compute_trunk_name|string not in compute_trunks.stdout"
+
+  - name: Call additional-port processing
+    include_tasks: additional-ports.yaml
+    
+  # Create additional ports in OpenStack  
+  - name: Create additionalNetworks ports
+    os_port:
+      name:  "{{ item.0 }}-{{ item.1.name }}"
+      vnic_type: "{{ item.1.type }}"
+      network: "{{ item.1.uuid }}" 
+      port_security_enabled: "{{ item.1.port_security_enabled|default(omit) }}"
+      no_security_groups: "{{ 'true' if item.1.security_groups is not defined else omit }}"
+      security_groups: "{{ item.1.security_groups | default(omit) }}"
+    with_nested:
+      - "{{ worker_list }}"
+      - "{{ port_name_list }}"
+
+  # Tag the ports with the cluster info
+  - name: 'Set additionalNetworks ports tag'
+    command:
+      cmd: "openstack port set --tag {{ cluster_id_tag }} {{ item.0 }}-{{ item.1.name }}"
+    with_nested: 
+      - "{{ worker_list }}"
+      - "{{ port_name_list }}"
+
+  # Build the nic list to use for server create
+  - name: Build nic list
+    set_fact:
+      nic_list: "{{ nic_list | default([]) + [ item.name ] }}"
+    with_items: "{{ port_name_list }}"
+
+  # Create the servers
+  - name: 'Create the Compute servers'
+    vars:
+      worker_nics: "{{ [ item.1 ] | product(nic_list) | map('join','-') | map('regex_replace', '(.*)', 'port-name=\\1') | list }}"
+    os_server:
+      name: "{{ item.1 }}"
+      image: "{{ os_image_rhcos }}"
+      flavor: "{{ os_flavor_worker }}"
+      auto_ip: no
+      userdata: "{{ lookup('file', 'worker.ign') | string }}"
+      security_groups: []
+      nics:  "{{ [ 'port-name=' + os_port_worker + '-' + item.0|string ] + worker_nics }}"
+      config_drive: yes
+    with_indexed_items: "{{ worker_list }}"
