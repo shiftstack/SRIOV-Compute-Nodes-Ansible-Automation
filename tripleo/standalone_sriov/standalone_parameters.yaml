@@ -1,0 +1,55 @@
+#vi:syntax=yaml
+
+parameter_defaults:
+  CloudName: standalone.shiftstack
+  Debug: true
+  DeploymentUser: stack
+  DnsServers:
+    - 10.11.5.19
+    - 10.10.160.2
+    - 10.5.30.160
+  # needed for vip & pacemaker
+  KernelIpNonLocalBind: 1
+  DockerInsecureRegistryAddress:
+    - 192.168.24.1:8787
+  # domain name used by the host
+  CloudDomain: shiftstack
+  NeutronDnsDomain: shiftstack
+  NeutronBridgeMappings: 'external:br-ex,hostonly:br-hostonly,tenant:br-isolated,sriov:br-sriov'
+  NeutronFlatNetworks: external,hostonly
+  StandaloneEnableRoutedNetworks: false
+  StandaloneHomeDir: "/home/stack"
+  InterfaceLocalMtu: 1500
+  SELinuxMode: permissive
+  # For OSP17+:
+  StandaloneNetworkConfigTemplate: "/home/stack/dev-install_net_config.yaml"
+  # For OSP16:
+  StandaloneNetConfigOverride:
+    network_config:
+      - {'type': 'ovs_bridge', 'name': 'br-ex', 'use_dhcp': True, 'ovs_extra': ['br-set-external-id br-ex bridge-id br-ex'], 'members': [{'type': 'interface', 'name': 'eno1', 'primary': True}]}
+      - {'type': 'ovs_bridge', 'name': 'br-ctlplane', 'use_dhcp': False, 'ovs_extra': ['br-set-external-id br-ctlplane bridge-id br-ctlplane'], 'addresses': [{'ip_netmask': '192.168.24.1/32'}], 'members': [{'type': 'interface', 'name': 'dummy0', 'nm_controlled': True}]}
+      - {'type': 'ovs_bridge', 'name': 'br-hostonly', 'use_dhcp': False, 'ovs_extra': ['br-set-external-id br-hostonly bridge-id br-hostonly'], 'addresses': [{'ip_netmask': '192.168.25.1/32'}], 'routes': [{'destination': '192.168.25.0/24', 'nexthop': '192.168.25.1'}], 'members': [{'type': 'interface', 'name': 'dummy1', 'nm_controlled': True}]}
+      - {'type': 'sriov_pf', 'name': 'enp4s0f1', numbvfs': '10', 'use_dhcp': False, 'defroute': 'false', 'nm_controlled': 'true', 'hotplug': 'true', 'promisc': 'false'}
+  OctaviaGenerateCerts: true
+  OctaviaCaKeyPassphrase: "secrete"
+  OctaviaAmphoraSshKeyFile: "/home/stack/octavia.pub"
+  OctaviaAmphoraImageFilename: "/home/stack/amphora.qcow2"
+
+  #SRIOV settings
+  IsolCpusList: "18-19,38-39"
+  KernelArgs: "default_hugepagesz=1GB hugepagesz=1G hugepages=32 iommu=pt intel_iommu=on isolcpus=1-19,21-39"
+  TunedProfileName: "cpu-partitioning"
+  NeutronBridgeMappings:
+    - sriov:br-sriov
+  NeutronPhysicalDevMappings:
+    - sriov:enp4s0f1
+  NovaPCIPassthrough:
+    - address: "0000:04:00.1"
+      trusted: "true"
+      physical_network: "sriov"
+  NovaComputeCpuDedicatedSet: '18-19,38-39'
+  NovaReservedHostMemory: 4096
+  NeutronEnableDVR: false
+  NeutronNetworkVLANRanges: 'tenant:100:2000,sriov:320:329'
+  NeutronNetworkType: 'vxlan,vlan'
+  NeutronTunnelTypes: 'vxlan'
