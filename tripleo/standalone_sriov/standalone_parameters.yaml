@@ -29,7 +29,7 @@ parameter_defaults:
       - {'type': 'ovs_bridge', 'name': 'br-ex', 'use_dhcp': True, 'ovs_extra': ['br-set-external-id br-ex bridge-id br-ex'], 'members': [{'type': 'interface', 'name': 'eno1', 'primary': True}]}
       - {'type': 'ovs_bridge', 'name': 'br-ctlplane', 'use_dhcp': False, 'ovs_extra': ['br-set-external-id br-ctlplane bridge-id br-ctlplane'], 'addresses': [{'ip_netmask': '192.168.24.1/32'}], 'members': [{'type': 'interface', 'name': 'dummy0', 'nm_controlled': True}]}
       - {'type': 'ovs_bridge', 'name': 'br-hostonly', 'use_dhcp': False, 'ovs_extra': ['br-set-external-id br-hostonly bridge-id br-hostonly'], 'addresses': [{'ip_netmask': '192.168.25.1/32'}], 'routes': [{'destination': '192.168.25.0/24', 'nexthop': '192.168.25.1'}], 'members': [{'type': 'interface', 'name': 'dummy1', 'nm_controlled': True}]}
-      - {'type': 'sriov_pf', 'name': 'enp4s0f1', numbvfs': '10', 'use_dhcp': False, 'defroute': 'false', 'nm_controlled': 'true', 'hotplug': 'true', 'promisc': 'false'}
+      - {'type': 'sriov_pf', 'name': 'enp4s0f1', numvfs': '10', 'use_dhcp': False, 'defroute': 'false', 'nm_controlled': 'true', 'hotplug': 'true', 'promisc': 'false'}
   OctaviaGenerateCerts: true
   OctaviaCaKeyPassphrase: "secrete"
   OctaviaAmphoraSshKeyFile: "/home/stack/octavia.pub"
