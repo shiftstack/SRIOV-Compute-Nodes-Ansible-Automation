@@ -49,7 +49,7 @@ parameter_defaults:
   NovaComputeCpuDedicatedSet: '18-19,38-39'
   NovaReservedHostMemory: 4096
   NeutronEnableDVR: false
-  #NeutronMechanismDrivers: ['sriovnicswitch']
+  NeutronMechanismDrivers: ['sriovnicswitch']
   NeutronPluginExtensions: "qos,port_security"
 #  NovaSchedulerDefaultFilters: ['AvailabilityZoneFilter','ComputeFilter','ComputeCapabilitiesFilter','ImagePropertiesFilter','ServerGroupAntiAffinityFilter','ServerGroupAffinityFilter','PciPassthroughFilter']
 #  NovaSchedulerAvailableFilters: ["nova.scheduler.filters.all_filters","nova.scheduler.filters.pci_passthrough_filter.PciPassthroughFilter"]
